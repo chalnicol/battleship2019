@@ -81,16 +81,32 @@ window.onload = function () {
         preload: function ()
         {
         //...
+
+            var _this = this;
+            
+            this.loadtxt = this.add.text ( config.width/2, config.height/2, 'Loading Game Files..', { color: '#000', fontSize: 15 }).setOrigin(0.5);
+
             this.load.audioSprite('sfx', 'client/assets/sfx/fx_mixdown.json', [
                 'client/assets/sfx/sfx.ogg',
                 'client/assets/sfx/sfx.mp3'
             ]);
             this.load.audio ('drumsofwar', [ 'client/assets/sfx/drumsofwar.ogg', 'client/assets/sfx/drumsofwar.mp3'] );
             this.load.audio ('siege', [ 'client/assets/sfx/siege.ogg', 'client/assets/sfx/siege.mp3'] );
-
             this.load.spritesheet('thumbs', 'client/assets/images/fleet.png', { frameWidth: 400, frameHeight: 80 });
 
-            this.loadtxt = this.add.text ( config.width/2, config.height/2, 'Loading Game Files..', { color: '#000', fontSize: 15 }).setOrigin(0.5);
+            this.load.on('progress', function (value) {
+
+                _this.loadtxt.text = 'Loading Game Files.. ' + value;
+        
+            });
+        
+            this.load.on('complete', function () {
+        
+                _this.loadtxt.destroy();
+        
+            });
+
+           
 
         },
         create: function ()
