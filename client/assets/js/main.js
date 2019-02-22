@@ -31,7 +31,7 @@ window.onload = function () {
         
         var pW = parentDiv.clientWidth;
             pH = pW * 16/9;
-
+        
         config = {
 
             type: Phaser.AUTO,

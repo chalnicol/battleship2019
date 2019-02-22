@@ -10,9 +10,9 @@
 
 	<script src="/socket.io/socket.io.js"></script>
 
-	<!-- <script src="client/assets/js/phaser/dist/phaser.min.js"></script> -->
+	<script src="client/assets/js/phaser/dist/phaser.min.js"></script>
 
-	<script src="//cdn.jsdelivr.net/npm/phaser@3.16.2/dist/phaser.js"></script>
+	<!-- <script src="//cdn.jsdelivr.net/npm/phaser@3.16.2/dist/phaser.js"></script> -->
 
 	<script src="client/assets/js/main.js"></script>
 
@@ -22,7 +22,7 @@
 
 			padding: 0;
 			margin:0;
-			height : 100vh;
+			height: 100%;
 			background: #ccc url('client/assets/images/background_1.jpg') repeat;
 			font-family: Arial, Helvetica, sans-serif;
 
@@ -38,13 +38,11 @@
 			-webkit-overflow-scrolling: touch;
 		}
 
-		
 		#game_login {
 
 			width:85%;
-			height : auto;
 			max-width: 300px;
-			margin:auto;
+			margin: auto;
 			padding : 15px;
 			border : 1px solid #fff;
 			border-radius: 3px;
@@ -53,6 +51,7 @@
 		}
 
 		#game_div {
+
 			width:100%;
 			height:auto;	
 			max-width: 414px;
@@ -96,10 +95,14 @@
 					<input type="submit" value="Enter Game" class="button" id="btnEnter">
 				</form>
 			</div>
-	
 			<div id="game_div" style="display: none"></div>
-
+		
 		</div>
+
+			
+		
+
+		
 	
 </body>
 </html>
