@@ -165,6 +165,16 @@ io.on('connection', function(socket){
 		playerList [ socket.id ] = newPlayer;
 
 		console.log ( '\n --> ' + newPlayer.username  + ' has entered the game.' );
+
+		sendPlayersOnline ();
+		
+	});
+
+	socket.on ('getPlayersOnline', function (data) {
+		
+		var playersCount = Object.keys(socketList).length;
+
+		socket.emit ( 'playersOnline', playersCount );
 		
 	});
 	
@@ -258,6 +268,9 @@ io.on('connection', function(socket){
 			
 			startGame ( player.roomid );
 
+		}else {
+
+			sendPlayerReady ( player.roomid );
 		}
 		
 	});
@@ -335,7 +348,6 @@ function getAvailableRoom () {
 	return null;
 
 }
-
 function verifyClickSent ( socketid ) {
 
 	var player = playerList [socketid];
@@ -373,7 +385,6 @@ function initGame ( playerIDs ) {
 	}
 
 }
-
 function checkPlayersAreReady ( roomID ) {
 
 	var gameRoom = roomList [roomID];
@@ -388,7 +399,6 @@ function checkPlayersAreReady ( roomID ) {
 	return true;
 
 }
-
 function bothPlayersRequestsRematch ( roomID ) {
 
 	var gameRoom = roomList [roomID];
@@ -403,7 +413,39 @@ function bothPlayersRequestsRematch ( roomID ) {
 	return true;
 
 }
+function sendPlayerReady ( roomID ) {
 
+	var gameRoom = roomList[roomID];
+
+	for ( var i=0; i<gameRoom.playerCount; i++) {
+
+		var self = playerList [ gameRoom.playerIDs[i] ];
+
+		var oppo  = playerList [ gameRoom.playerIDs[ i==0 ? 1 : 0] ];
+
+		var returnData = {
+			'self' : self.isReady,
+			'oppo' : oppo.isReady
+		}
+
+		var socket = socketList [ self.id ];
+
+		socket.emit ('onePlayerReady', returnData );
+	}
+
+}
+function sendPlayersOnline () {
+	
+	var playersCount = Object.keys(socketList).length;
+
+	for ( var i in socketList ) {
+		
+		var socket = socketList [i]; 
+
+		socket.emit ( 'playersOnline', playersCount );
+
+	}
+}
 function startGame ( roomID ) {
 
 	console.log ( '\n Game has started...', roomID );
@@ -422,7 +464,6 @@ function startGame ( roomID ) {
 	}
 
 } 
-
 function resetGame ( roomID ) {
 
 	console.log ( '\n Game has been restarted...', roomID );
@@ -443,7 +484,6 @@ function resetGame ( roomID ) {
 	}
 
 } 
-
 function leaveRoom ( playerid, roomid ) {
 	
 	var player = playerList [playerid];
@@ -485,7 +525,6 @@ function leaveRoom ( playerid, roomid ) {
 	}
 	
 }
-
 function initGridData ( playerid, fleet ) {
 
 	var player = playerList [ playerid ];
@@ -541,7 +580,6 @@ function initGridData ( playerid, fleet ) {
 
 	
 }
-
 function analyzeGridClicked ( post, playerid ) {
 	
 	var isWinner = false;
@@ -664,7 +702,6 @@ function analyzeGridClicked ( post, playerid ) {
 
 	
 }
-
 function getOpponentsId ( playerid ) {
 	
 	var plyr = playerList[playerid];
@@ -681,7 +718,6 @@ function getOpponentsId ( playerid ) {
 	return '';
 
 }
-
 function checkWinner ( playerid ) {
 
 	var fleet = playerList[playerid].fleet;

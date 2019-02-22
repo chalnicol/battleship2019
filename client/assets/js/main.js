@@ -101,11 +101,17 @@ window.onload = function () {
             this.initializeSound();
 
             this.initGraphics();
+            
+            this.initPlayersOnline();
 
             this.initSocketIOListeners();
 
             this.createButtons();
 
+            setTimeout ( function () {
+                socket.emit ('getPlayersOnline', null );
+            }, 1000 );
+        
         },
         initSocketIOListeners :  function () {
 
@@ -115,12 +121,14 @@ window.onload = function () {
 
             socket.on ('initGame', function ( data ) {
                 
-                console.log ('init game...' );
-
                 _this.initGame (data);
 
             });
+            socket.on ('playersOnline', function ( data ) {
+                
+                _this.playersOnlineTxt.text = 'Players Online : ' + data;
 
+            });
 
 
         },
@@ -165,7 +173,7 @@ window.onload = function () {
             text.setShadow( 1, 1, '#999', 1, true, true );
 
             var nameTxtConfig = {
-                color : '#6a6a6a',
+                color : '#660033',
                 fontSize  : config.height * 0.018,
                 fontFamily : 'Trebuchet MS',
                 fontStyle : 'bold'
@@ -181,6 +189,35 @@ window.onload = function () {
 
             //this.onlineCount = this.add.text ( config.width *0.9, config.height*0.06, 'Players Online : 1', onlineCountConfig ).setOrigin (1, 0.5);
 
+
+        },
+        initPlayersOnline : function () {
+
+            var x = config.width/2,
+                y = config.height * 0.7;
+
+            var txtConfig = {
+                color : '#7e7e7e',
+                fontSize : config.height * 0.018,
+                fontFamily : 'Arial',
+                fontStyle : 'bold'
+            };
+
+            this.playersOnlineTxt = this.add.text ( x, y, 'Players Online : 0', txtConfig).setOrigin ( 0.5 );
+
+
+            var max = 5;
+
+            var r = config.width * 0.01,
+                s = r * 5,
+                t = max * ( r + s ) - s,
+                x = (config.width - t)/2,
+                y = config.height * 0.65;
+
+            for ( var i =0; i < max; i++ ) {
+
+                var str = this.add.star ( x + i * (r + s), y, 5, r/2, r, 0x6a6a6a, 1 );
+            }
 
         },
         createButtons: function () {
@@ -273,7 +310,7 @@ window.onload = function () {
 
             var txtConfig = { color: '#000', fontSize : config.height * 0.02, fontFamily : 'Trebuchet MS' }
 
-            var waitTxt = this.add.text ( config.width/2, config.height *0.4, 'Waiting for other player..' , txtConfig ).setOrigin(0.5);
+            var waitTxt = this.add.text ( config.width/2, config.height *0.4, 'Waiting for players..' , txtConfig ).setOrigin(0.5);
 
             this.screenElements.push ( waitTxt );
 
@@ -440,6 +477,13 @@ window.onload = function () {
 
             var _this = this;
 
+            socket.on ('onePlayerReady', function ( data ) {
+
+                if ( data.self ) _this.plyrIndicator ['self'].ready();
+
+                if ( data.oppo ) _this.plyrIndicator ['oppo'].ready();
+
+            });
             socket.on ('opponentLeft', function ( data ) {
 
                 if ( _this.isPrompted ) _this.removePrompt();
@@ -455,7 +499,6 @@ window.onload = function () {
                 }, 200);
                 
             });
-
             socket.on("resetGame", function () {
 			
                 if ( _this.isPrompted ) _this.removePrompt ();
@@ -465,8 +508,6 @@ window.onload = function () {
                 }, 200 )
                 
             });
-
-
             socket.on ('gridClickResult', function (data) {
 
                 //update data..
@@ -536,11 +577,8 @@ window.onload = function () {
                 }
 
             });
-
             socket.on ('startGame', function ( data ) {
                 
-                console.log ('data turn sent :', data );
-
                 if ( _this.isPrompted ) _this.removePrompt();
 
                 _this.turn = data;
@@ -549,7 +587,6 @@ window.onload = function () {
 
             });
 
-            
         },
         initSound: function () {
 
@@ -805,7 +842,7 @@ window.onload = function () {
 
             }
 
-            console.log ('data created', player, counterCheck );
+            //console.log ('data created', player, counterCheck );
 
         },
         createFleet : function ( player='self') {
@@ -938,11 +975,11 @@ window.onload = function () {
             this.music.play ('move');
 
             if ( !proper ) {
-                var buttonTexts = [ { id : 'leave', val: '✘ Leave' },
+                var buttonTexts = [ { id : 'leave', val: '✘ Quit Game' },
                                     { id : 'random', val: '❉ Random' },
                                     { id : 'ready', val: '❖ Ready' }];
             }else {
-                var buttonTexts = [ { id : 'leave', val: '✘ Leave Game' },
+                var buttonTexts = [ { id : 'leave', val: '✘ Quit Game' },
                                     { id : 'switch', val: '➦ Switch Field' }];
             }
             
@@ -1019,21 +1056,26 @@ window.onload = function () {
                 
 
         },
-        removeButtons: function () {
+        removeButtons: function ( instant = false ) {
 
             for ( var i in this.buts ) {
 
                 this.buts[i].disableInteractive();
 
-                this.tweens.add ( {
-                    targets: this.buts[i],
-                    x : config.width + this.buts[i].width,
-                    duration : 300,
-                    ease : 'Power2',
-                    onComplete : function () {
-                        this.targets[0].destroy();
-                    }
-                }); 
+                if ( instant ) {
+                    this.buts[i].destroy();
+                }else {
+                    this.tweens.add ( {
+                        targets: this.buts[i],
+                        x : config.width + this.buts[i].width,
+                        duration : 300,
+                        ease : 'Power2',
+                        onComplete : function () {
+                            this.targets[0].destroy();
+                        }
+                    }); 
+                }
+                
             }
             this.buts = [];
         
@@ -1224,7 +1266,10 @@ window.onload = function () {
         
             this.view = 'self';
 
-            this.removeButtons();
+            this.plyrIndicator ['self'].reset();
+            this.plyrIndicator ['oppo'].reset();
+            
+            this.removeButtons(true);
 
             this.moveField ();
 
@@ -2039,7 +2084,7 @@ window.onload = function () {
 
             this.endtext = this.add.text ( config.width/2, pY + pH * 0.35, txt, txtConfig ).setOrigin(0.5).setDepth ( 9999 );
 
-            var buts = ['Leave', 'Rematch'];
+            var buts = [ 'Rematch', 'Quit' ];
 
             var bW = pW * 0.4,
                 bH = pH * 0.22,
@@ -2055,7 +2100,10 @@ window.onload = function () {
             for ( var i=0; i < buts.length; i++ ) {
 
                 var but = new MyButton (this, 'buts' + i, bX + i * (bW + bS), bY, bW, bH, buts[i] ).setDepth(9999);
-
+                
+                but.on('pointerup', function () {
+                    this.change(0x3c3c3c);
+                })
                 but.on('pointerover', function () {
                     this.change (0x6c6c6c);
                 });
@@ -2068,10 +2116,10 @@ window.onload = function () {
             
                     this.change (0xff3333);
                     switch ( this.id ) {
-                        case 'buts0' :
+                        case 'buts1' :
                             _this.leaveGame();
                         break;
-                        case 'buts1' :
+                        case 'buts0' :
 
                             if ( _this.isEndScreen ) _this.removeEndScreen();
 
@@ -2095,9 +2143,7 @@ window.onload = function () {
                         break;
                     }
                 });
-                but.on('pointerup', function () {
-                    this.change(0x3c3c3c);
-                });
+;
 
                 this.endButs.push ( but );
 
@@ -2392,7 +2438,9 @@ window.onload = function () {
 
             var top = -height/2, left = -width/2;
 
-            this.text = scene.add.text ( left + width * 0.1, top + height * 0.1, id, txtConfig );
+            var txtid = id < 10 ? '0' + id : id;
+
+            this.text = scene.add.text ( left + width * 0.1, top + height * 0.1, txtid, txtConfig );
 
            
             this.add ([this.rect, this.text]); // add elements to this container..
@@ -2570,27 +2618,34 @@ window.onload = function () {
             this.winTxt.text = '✪ Wins: ' + wins;
 
         },
-        reset : function () {
-
-            this.turnTxt.text = '';
+        changeBackground : function ( clr, alpha = 1 ) {
 
             this.shape.clear();
-            this.shape.fillStyle( this.bgColor, 0.7 );
+            this.shape.fillStyle( clr, alpha );
             this.shape.fillRoundedRect ( -this.width/2, -this.height/2, this.width, this.height, 3);
             this.shape.strokeRoundedRect ( -this.width/2, -this.height/2, this.width, this.height, 3);
-
+            
         },
         isTurn: function ( turn=true ) {
 
             this.turnTxt.text = (turn == true) ? '· Your Turn ·' : '';
 
-            this.shape.clear();
-            this.shape.fillStyle( !turn ? 0xf3f3f3 : 0xffff99, 0.7 );
-            this.shape.fillRoundedRect ( -this.width/2, -this.height/2, this.width, this.height, 3);
-            this.shape.strokeRoundedRect ( -this.width/2, -this.height/2, this.width, this.height, 3);
+            this.changeBackground ( !turn ? 0xf3f3f3 : 0xffff99, 0.7 );
 
-        }
+        },
+        ready : function () {
 
+            this.turnTxt.text = '· Ready ·';
+
+            this.changeBackground ( 0x66ffcc );
+
+        },
+        reset : function () {
+
+            this.turnTxt.text = '';
+            this.changeBackground ( this.bgColor, 0.7  );
+        },
+        
 
     });
 
