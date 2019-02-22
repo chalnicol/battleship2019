@@ -96,7 +96,9 @@ window.onload = function () {
 
             this.load.on('progress', function (value) {
 
-                _this.loadtxt.text = 'Loading Game Files.. ' + value;
+                var perc = Math.floor ( value * 100 );
+
+                _this.loadtxt.text = 'Loading Game Files.. ' + perc + '%';
         
             });
         
