@@ -2070,16 +2070,25 @@ window.onload = function () {
                             _this.leaveGame();
                         break;
                         case 'buts1' :
-                        
+
                             if ( _this.isEndScreen ) _this.removeEndScreen();
 
-                            setTimeout ( function () {
+                            if ( !_this.isSinglePlayer ) {
+
+                                setTimeout ( function () {
                                 
-                                socket.emit ('rematchRequest', null );
+                                    socket.emit ('rematchRequest', null );
+    
+                                    _this.showPrompt ('Waiting for other player');
+    
+                                }, 200);
 
-                                _this.showPrompt ('Waiting for other player');
+                            }else {
 
-                            }, 200);
+                                _this.resetGame();
+
+                            }
+                            
                             
                         break;
                     }
