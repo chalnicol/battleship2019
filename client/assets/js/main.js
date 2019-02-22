@@ -444,6 +444,8 @@ window.onload = function () {
 
                 if ( _this.isPrompted ) _this.removePrompt();
 
+                if ( _this.isEndScreen ) _this.removeEndScreen();
+
                 _this.removeButtons ();
 
                 _this.activateGrid (false);
