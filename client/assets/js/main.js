@@ -144,6 +144,8 @@ window.onload = function () {
             });
             socket.on ('playersOnline', function ( data ) {
                 
+                _this.music.play ('message');
+
                 _this.playersOnlineTxt.text = 'Players Online : ' + data;
 
             });
@@ -221,7 +223,7 @@ window.onload = function () {
                 fontStyle : 'bold'
             };
 
-            this.playersOnlineTxt = this.add.text ( x, y, 'Players Online : 0', txtConfig).setOrigin ( 0.5 );
+            this.playersOnlineTxt = this.add.text ( x, y, 'Players Online : -', txtConfig).setOrigin ( 0.5 );
 
 
             var max = 5;
@@ -993,12 +995,13 @@ window.onload = function () {
             this.music.play ('move');
 
             if ( !proper ) {
-                var buttonTexts = [ { id : 'leave', val: '✘ Quit Game' },
-                                    { id : 'random', val: '❉ Random' },
+                var buttonTexts = [ { id : 'leave', val: '✘ Quit' },
+                                    { id : 'random', val: '★ Random' },
                                     { id : 'ready', val: '❖ Ready' }];
             }else {
-                var buttonTexts = [ { id : 'leave', val: '✘ Quit Game' },
-                                    { id : 'switch', val: '➦ Switch Field' }];
+                var buttonTexts = [ { id : 'leave', val: '✘ Quit' },
+                                    //{ id : 'settings', val: '⚙ Settings' },
+                                    { id : 'switch', val: '⇾ Switch Field' }];
             }
             
             var totalW = config.width * 0.95; 
