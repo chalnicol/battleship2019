@@ -318,7 +318,6 @@ io.on('connection', function(socket){
 	
 	socket.on("disconnect",function () {
 			
-
 		if ( playerList.hasOwnProperty(socket.id) ) {
 			
 			var plyr = playerList[socket.id];
@@ -332,6 +331,9 @@ io.on('connection', function(socket){
 		}
 
 		delete socketList [socket.id];
+
+		sendPlayersOnline();
+
 		
 	});
 

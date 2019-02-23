@@ -457,7 +457,9 @@ window.onload = function () {
             this.turn = '';  
             this.view = '';
             this.blitz = false;
-            this.winner = '';
+            this.winner = '';   
+            this.leftGame = false;
+
 
             this.isSinglePlayer = data.isSinglePlayer;
             this.tmpPlayers = data.players;
@@ -1336,35 +1338,38 @@ window.onload = function () {
         },
         switchTurn: function () {
 
-            this.turn = (this.turn == 'self') ? 'oppo' : 'self';
+            if ( this.gameOn ) {
 
-            this.music.play('message');
+                this.turn = (this.turn == 'self') ? 'oppo' : 'self';
 
-            this.plyrIndicator['self'].isTurn ( this.turn == 'self' );
-            this.plyrIndicator['oppo'].isTurn ( this.turn == 'oppo');
+                this.music.play('message');
+
+                this.plyrIndicator['self'].isTurn ( this.turn == 'self' );
+                this.plyrIndicator['oppo'].isTurn ( this.turn == 'oppo');
+                
             
-        
-            if ( this.isSinglePlayer ) {
+                if ( this.isSinglePlayer ) {
 
-                var _this = this;
+                    var _this = this;
 
-                if ( this.turn == 'oppo') {
+                    if ( this.turn == 'oppo') {
 
-                    setTimeout( function () {
-                        _this.autoPick();
-                    }, 1000);
+                        setTimeout( function () {
+                            _this.autoPick();
+                        }, 1000);
+
+                    }else {
+
+                        if ( this.view == 'self') {
+                            this.activateGrid();
+                        }
+                    }
 
                 }else {
 
-                    if ( this.view == 'self') {
-                        this.activateGrid();
-                    }
+                    if ( this.turn == 'self' && this.view == 'self' ) this.activateGrid();
+
                 }
-
-            }else {
-
-                if ( this.turn == 'self' && this.view == 'self' ) this.activateGrid();
-
             }
             
         },
@@ -1710,6 +1715,8 @@ window.onload = function () {
 
         },
         autoPick: function  () {
+
+            if ( !this.gameOn ) return;
 
             var opp = (this.turn == 'self') ? 'oppo' : 'self';
 
@@ -2274,11 +2281,14 @@ window.onload = function () {
         },
         leaveGame :  function () {
 
-            console.log ('leaving sceneB');
 
             socket.emit ('leaveGame');
 
             socket.removeAllListeners();
+
+            this.gameOn = false;
+
+            this.music.stop();
 
             this.bgmusic.stop();
 

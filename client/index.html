@@ -7,12 +7,11 @@
 	<meta http-equiv="X-UA-Compatible" content="ie=edge">
 	<title>Battleship Game</title>
 
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
 
 	<script src="/socket.io/socket.io.js"></script>
 
 	<script src="client/assets/js/phaser/dist/phaser.min.js"></script>
-
-	<!-- <script src="//cdn.jsdelivr.net/npm/phaser@3.16.2/dist/phaser.js"></script> -->
 
 	<script src="client/assets/js/main.js"></script>
 
@@ -41,7 +40,7 @@
 		#game_login {
 
 			width:85%;
-			max-width: 300px;
+			max-width: 350px;
 			margin: auto;
 			padding : 15px;
 			border : 1px solid #fff;
@@ -59,29 +58,6 @@
 			margin:auto;
 			background-color : #ccc;
 		}
-
-		.form {
-			-webkit-appearance: none;
-			max-width: 100%;
-			border-radius: 5px;
-			border : 1px solid #9c9c9c;
-			height : 36px;
-			padding : 0 5px;
-			margin-bottom : 5px;
-		}
-		.button {
-			-webkit-appearance: none;
-			border-radius: 5px;
-			border : 1px solid #8e8e8e;
-			height: 36px;
-			background-color: #6c6c6c;
-			color : #fff;
-			padding : 0 12px;
-			margin-bottom : 5px;
-		}
-		.button:hover {
-			background-color: #9a9a9a;
-		}
 		
 	</style>
 
@@ -93,9 +69,19 @@
 
 			<div id="game_login">
 				<form id="myForm">
-					<label for=""><strong>Welcome to Battleship Game</strong></label><br><br>
-					<input type="text" id="username" class="form" placeholder="username here" maxlength="15"/>
-					<input type="submit" value="Enter Game" class="button" id="btnEnter">
+					
+					<label for=""><strong>☘ Welcome to Battleship Game</strong></label>
+					<div class="form-row">
+						<div class="col-7 mb-1">
+							
+							<input type="text" id="username" class="form-control form-control-sm" placeholder="username here" maxlength="15"/>
+						</div>
+						<div class="col-5">
+							<input type="submit" value="Enter Game" class="btn btn-secondary btn-sm btn-block" id="btnEnter">
+						</div>
+					</div>
+					
+					
 				</form>
 			</div>
 			<div id="game_div" style="display: none"></div>
