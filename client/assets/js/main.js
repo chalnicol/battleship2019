@@ -277,17 +277,14 @@ window.onload = function () {
 
                     if ( isSinglePlayer ) {
 
-                        var initData = {
+                        _this.removeButtons();
 
+                        var toSend = {
                             'isSinglePlayer' : true,
-                            'isTimed' : false,
-                            'players' : {
-                                'self' : username.value
-                            }
+                            'isTimed' : false
+                        }
 
-                        };
-
-                        _this.initGame( initData );
+                        socket.emit ('enterGame', toSend );
 
                     }else {
 
@@ -296,7 +293,6 @@ window.onload = function () {
                         _this.showWaitScreen ();
 
                         var toSend = {
-
                             'isSinglePlayer' : false,
                             'isTimed' : false
                         }

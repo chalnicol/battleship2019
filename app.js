@@ -188,11 +188,15 @@ io.on('connection', function(socket){
 				
 			newRoom.playerIDs.push ( socket.id )
 
+			newRoom.isClosed = true;
+
 			roomList [ socket.id ] = newRoom;
 
 			var player = playerList [ socket.id ];
 
 			player.roomid = socket.id;
+
+			console.log ('\n --> [SP] Room Created :',  newRoom.id );
 
 			var returnData = {
 			
@@ -212,7 +216,7 @@ io.on('connection', function(socket){
 
 			console.log ('\n --> avail room',  availableRoom );
 
-			if ( availableRoom == null ) {
+			if ( availableRoom == 'none' ) {
 
 				var newRoom = GameRoom ( socket.id, data.isTimed );
 				
@@ -225,8 +229,6 @@ io.on('connection', function(socket){
 				var player = playerList [ socket.id ];
 
 				player.roomid = socket.id;
-
-				socket.emit ('waitingGame', null );
 
 				console.log ( '\n --> Room Created :', newRoom.id );
 
@@ -321,11 +323,11 @@ io.on('connection', function(socket){
 		if ( playerList.hasOwnProperty(socket.id) ) {
 			
 			var plyr = playerList[socket.id];
-			
-			if ( plyr.roomid != '' ) leaveRoom ( socket.id, plyr.roomid );
-			
+
 			console.log ( '\n <-- ' + plyr.username  + ' has been disconnected.' );
 
+			if ( plyr.roomid != '' ) leaveRoom ( socket.id, plyr.roomid );
+			
 			delete playerList [socket.id];
 
 		}
@@ -347,7 +349,7 @@ function getAvailableRoom () {
 	for ( var i in roomList ) {
 		if ( !roomList[i].isClosed ) return roomList[i].id;
 	}
-	return null;
+	return 'none';
 
 }
 function verifyClickSent ( socketid ) {
