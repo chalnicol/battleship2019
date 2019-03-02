@@ -156,22 +156,23 @@ window.onload = function () {
 
             this.music = this.sound.addAudioSprite('sfx');
 
-            this.introsound = this.sound.add ('drumsofwar').setVolume(0.2);
+            this.introsound = this.sound.add ('drumsofwar').setVolume(0.2).setLoop(true);
             this.introsound.play();
 
         },
         initGraphics : function () {
 
             var graphics = this.add.graphics();
-            graphics.fillStyle ( 0x3c3c3c, 1);
-            graphics.lineStyle ( 2, 0x9c9c9c );
+            graphics.fillStyle ( 0xc3c3c3, 1);
+            graphics.lineStyle ( 1, 0x3a3a3a );
             
             var width = config.width * 0.8, 
                 height = config.height * 0.1, 
                 x = (config.width - width)/2, 
                 y = config.height*0.1;
 
-            graphics.fillRoundedRect ( x, y, width, height, 5 );
+            graphics.fillRoundedRect ( x, y, width, height, height *0.1 );
+            graphics.strokeRoundedRect ( x, y, width, height, height *0.1 );
 
             graphics.beginPath();
             graphics.moveTo(x, config.height*0.22);
@@ -186,11 +187,11 @@ window.onload = function () {
 
             var textHeight = Math.floor (height * 0.31);
 
-            var txtConfig1 = { color:'#333', fontSize: textHeight, fontStyle:'bold', fontFamily:'Arial'};
+            var txtConfig1 = { color:'#dedede', fontSize: textHeight, fontStyle:'bold', fontFamily:'Trebuchet MS'};
 
             var text = this.add.text ( config.width*0.5, config.height*0.1 + height/2, 'Battleship Game', txtConfig1 ).setOrigin (0.5);
-            text.setStroke('#e5e5e5', 3);
-            text.setShadow( 1, 1, '#999', 1, true, true );
+            text.setStroke('#6c6c6c', 3);
+            text.setShadow( 1, 1, '#3a3a3a', 1, true, true );
 
             var nameTxtConfig = {
                 color : '#660033',
@@ -217,7 +218,7 @@ window.onload = function () {
                 y = config.height * 0.7;
 
             var txtConfig = {
-                color : '#7e7e7e',
+                color : '#3a3a3a',
                 fontSize : config.height * 0.018,
                 fontFamily : 'Arial',
                 fontStyle : 'bold'
@@ -236,7 +237,7 @@ window.onload = function () {
 
             for ( var i =0; i < max; i++ ) {
 
-                var str = this.add.star ( x + i * (r + s), y, 5, r/2, r, 0x6a6a6a, 1 );
+                var str = this.add.star ( x + i * (r + s), y, 5, r/2, r, 0x3a3a3a, 1 );
             }
 
         },
@@ -259,13 +260,13 @@ window.onload = function () {
 
             for ( var i=0; i<buts.length; i++) {
 
-                var bute = new MyButton ( this, buts[i].id, 0, i * (bH + bS) + sY, bW, bH, buts[i].value, 0x3a3a3a ); 
+                var bute = new MyButton ( this, buts[i].id, 0, i * (bH + bS) + sY, bW, bH, buts[i].value ); 
 
                 bute.on('pointerover', function () {
-                    this.change( 0x4e4e4e );
+                    this.change( this.hoverColor );
                 });
                 bute.on('pointerout', function () {
-                    this.change( 0x3a3a3a );
+                    this.change( this.bgColor );
                 });
                 bute.on('pointerdown', function () {
 
@@ -364,13 +365,13 @@ window.onload = function () {
                 cX = config.width/2,
                 cY = config.height * 0.52;
 
-            var bute = new MyButton ( this, 'cancel', cX, cY, cW, cH, 'Cancel', 0x3a3a3a );
+            var bute = new MyButton ( this, 'cancel', cX, cY, cW, cH, 'Cancel' );
 
             bute.on('pointerover', function () {
-                this.change( 0x4e4e4e );
+                this.change( this.hoverColor );
             });
             bute.on('pointerout', function () {
-                this.change( 0x3a3a3a );
+                this.change( this.bgColor  );
             });
             bute.on('pointerdown', function () {
 
@@ -468,7 +469,6 @@ window.onload = function () {
         create: function ()
         {
 
-            
             this.initGameData();
 
             this.initSound();
@@ -530,6 +530,7 @@ window.onload = function () {
 
                 //update data..
                 for ( var i=0; i<100; i++) {
+
                     _this.gameData ['self'].grid [i].isTrashed = data.self.grid[i].isTrashed;
                     _this.gameData ['self'].grid [i].isResided = data.self.grid[i].isResided;
 
@@ -538,8 +539,10 @@ window.onload = function () {
                 }
 
                 for ( var i=0; i<6; i++) {
+
                     _this.gameData ['self'].fleet[i].remains = data.self.fleet[i].remains;
                     _this.gameData ['oppo'].fleet[i].remains = data.oppo.fleet[i].remains;
+
                 }
 
                 _this.showHit ( _this.turn, data.post, data.shipIndex, data.isHit );
@@ -650,12 +653,24 @@ window.onload = function () {
 
             for ( var i in this.player ) {
 
-                var yp = ( i == 'self' ) ? config.height * 0.055 : config.height * 0.8;
+                var yp = ( i == 'self' ) ? config.height * 0.055 : config.height * 0.83;
 
                 var pi = new PlayerIndicator (this, i, fsX, yp, fW, fH, this.player[i].name, 3 );
 
                 this.plyrIndicator[i] = pi;
             }
+
+            var txtConfig = {
+                color : '#800000',
+                fontFamily : 'Trebuchet MS',
+                fontSize : fH * 0.3,
+                fontStyle : 'bold'
+            }
+
+            var tx = config.width *0.04,
+                ty = config.height * 0.76;
+
+            this.tmpText = this.add.text ( tx, ty, 'Versus :', txtConfig ) ;
             
         },
         createGraphicLine : function ( proper = false ) {
@@ -718,13 +733,13 @@ window.onload = function () {
                     var cll = new Cell ( this, counter, x, y, fW, fW, i, j );
 
                     cll.on ('pointerover', function () {
-                        this.change (0x6c6c6c);
+                        this.change ( this.hoverColor );
                     });
                     cll.on ('pointerout', function () {
-                        this.change (0x3c3c3c);
+                        this.change ( this.bgColor );
                     });
                     cll.on ('pointerup', function () {
-                        this.change (0x3c3c3c);
+                        this.change ( this.bgColor );
                     });
                     cll.on ('pointerdown', function () {
 
@@ -892,7 +907,7 @@ window.onload = function () {
 
                 this.ship[ fleetData[i].id ] = ship;
 
-                var shipActiveColor = 0xffff99; //0x66ff33
+                var shipActiveColor = 0xccff66; //0x66ff33
 
                 ship.on ('pointerdown', function() {
 
@@ -999,7 +1014,7 @@ window.onload = function () {
             }else {
                 var buttonTexts = [ { id : 'leave', val: '✘ Quit' },
                                     //{ id : 'settings', val: '⚙ Settings' },
-                                    { id : 'switch', val: '⇾ Switch Field' }];
+                                    { id : 'switch', val: '☋ Switch Field' }];
             }
             
             var totalW = config.width * 0.95; 
@@ -1012,13 +1027,13 @@ window.onload = function () {
                 
                 bfX = ( config.width - totalW )/2 + btnW/2,
 
-                bfY = (!proper) ? config.height * 0.69 : config.height * 0.95; 
+                bfY = (!proper) ? config.height * 0.69 : config.height * 0.951; 
 
             var _this = this;
 
             for ( var i=0; i<buttonTexts.length; i++) {
                 
-                var but = new MyButton ( this, buttonTexts[i].id, 0, bfY, btnW, btnH, buttonTexts[i].val, 0x6c6c6c );
+                var but = new MyButton ( this, buttonTexts[i].id, 0, bfY, btnW, btnH, buttonTexts[i].val );
 
                 this.buts.push ( but );
 
@@ -1026,14 +1041,14 @@ window.onload = function () {
                     this.change (this.bgColor);
                 });
                 but.on ('pointerover', function () {
-                    this.change (0x9c9c9c);
+                    this.change (this.hoverColor);
                 });
                 but.on ('pointerout', function () {
                     this.change (this.bgColor);
                 });
                 but.on ('pointerdown', function () {
 
-                    this.change (0xff3333);
+                    this.change (0x33ffff);
 
                     _this.music.play('clicka');
 
@@ -1480,7 +1495,7 @@ window.onload = function () {
                     
                 }
 
-                this.plyrIndicator ['oppo'].y = config.height * 0.8;
+                this.plyrIndicator ['oppo'].y = config.height * 0.83;
 
             }
 
@@ -1553,6 +1568,22 @@ window.onload = function () {
                 }
             }
 
+            var bgColor = this.view == 'self' ? 0x394639 : 0x4d4d33 ;
+            
+            var hoverColor = this.view == 'self' ? 0x506250 : 0x6b6b47 ;
+            
+            for ( var j in this.cell ) {
+
+                this.cell[j].bgColor = bgColor;
+
+                this.cell[j].hoverColor = hoverColor;
+
+                this.cell[j].change ( bgColor );
+
+            }
+
+            
+
         },
         showPrompt : function ( txt='', leave=false ) {
 
@@ -1570,17 +1601,17 @@ window.onload = function () {
             this.readyGraphic.fillStyle ( 0x0a0a0a, 0.5 );
             this.readyGraphic.fillRect ( 0, 0, config.width, config.height );
 
-            this.readyGraphic.fillStyle ( 0xf4f4f4, 0.8 );
-            this.readyGraphic.lineStyle ( 1, 0x9c9c9c );
+            this.readyGraphic.fillStyle ( 0x3a3a3a, 0.9 );
+            this.readyGraphic.lineStyle ( 1, 0xc3c3c3 );
 
             this.readyGraphic.fillRoundedRect ( pX, pY, pW, pH, pH * 0.05 );
             this.readyGraphic.strokeRoundedRect ( pX, pY, pW, pH, pH * 0.05 );
             
             var txtConfig = { 
-                fontFamily: 'Arial', 
+                fontFamily: 'Trebuchet MS', 
                 fontStyle : 'bold',
                 fontSize: pW * 0.05, 
-                color: '#000' 
+                color: '#f5f5f5' 
             };
 
             var ty = ( !leave ) ? pY + pH/2 : pY + pH * 0.3;
@@ -1602,7 +1633,7 @@ window.onload = function () {
                     this.change (this.bgColor);
                 });
                 but.on ('pointerover', function () {
-                    this.change (0x9c9c9c);
+                    this.change (this.hoverColor);
                 });
                 but.on ('pointerout', function () {
                     this.change (this.bgColor);
@@ -1640,7 +1671,7 @@ window.onload = function () {
                     var xp = Math.floor ( i/3 );
                         yp = i % 3;
                    
-                    var rems = ( this.view !='oppo' && fleetData[i].remains > 0 ) ? fleetData[i].length : fleetData[i].remains;
+                    var rems = ( this.view == 'oppo' && fleetData[i].remains > 0 ) ? fleetData[i].length : fleetData[i].remains;
 
                     var lege = new Legend ( this, 'ship'+i, -legW, legY + xp * (legH + legYS), legW, legH, this.view, fleetData[i].code, fleetData[i].length, rems );
 
@@ -1963,12 +1994,13 @@ window.onload = function () {
                 y = pi.y + pi.height * 0.2,
                 r = config.width * 0.08;
 
-            var bgcolor = !isHit ? 0xff6666 : 0x33cc33;
+            var bgcolor = !isHit ? 0xff3333 : 0x00cc00
 
-            this.hitStar = this.add.star ( x, y, 30, r*0.85, r, bgcolor, 0.9 ).setScale(0.3).setStrokeStyle ( 1, 0x9c9c9c, 0.9  );
+            this.hitStar = this.add.star ( x, y, 30, r*0.85, r, bgcolor, 1 ).setScale(0.3).setStrokeStyle ( 1, 0x9c9c9c, 0.9  );
+
             var txt = isHit ? 'Hit' : 'Miss';
 
-            var hitTextConfig = { color : '#fff', fontSize : r/2, fontFamily : 'Trebuchet MS' };
+            var hitTextConfig = { color : '#f5f5f5', fontSize : r/2, fontFamily : 'Trebuchet MS', fontStyle : 'bold' };
 
             this.hitText = this.add.text ( x, y, txt, hitTextConfig ).setOrigin (0.5).setScale(0.3).setRotation ( Math.PI/180 * 45 );
 
@@ -2093,17 +2125,17 @@ window.onload = function () {
             this.endGraphic.fillStyle ( 0x0a0a0a, 0.5 );
             this.endGraphic.fillRect ( 0, 0, config.width, config.height );
 
-            this.endGraphic.fillStyle ( 0xf4f4f4, 0.8 );
-            this.endGraphic.lineStyle ( 1, 0x9c9c9c );
+            this.endGraphic.fillStyle ( 0x3a3a3a, 0.9 );
+            this.endGraphic.lineStyle ( 1, 0xcccccc );
 
             this.endGraphic.fillRoundedRect ( pX, pY, pW, pH, pH * 0.05 );
             this.endGraphic.strokeRoundedRect ( pX, pY, pW, pH, pH * 0.05 );
             
             var txtConfig = { 
-                fontFamily: 'Arial', 
+                fontFamily: 'Trebuchet MS', 
                 fontStyle : 'bold',
                 fontSize: pW * 0.08, 
-                color: '#000' 
+                color: '#f5f5f5' 
             };
 
             this.endtext = this.add.text ( config.width/2, pY + pH * 0.35, txt, txtConfig ).setOrigin(0.5).setDepth ( 9999 );
@@ -2126,19 +2158,20 @@ window.onload = function () {
                 var but = new MyButton (this, 'buts' + i, bX + i * (bW + bS), bY, bW, bH, buts[i] ).setDepth(9999);
                 
                 but.on('pointerup', function () {
-                    this.change(0x3c3c3c);
+                    this.change( this.bgColor );
                 })
                 but.on('pointerover', function () {
-                    this.change (0x6c6c6c);
+                    this.change ( this.hoverColor);
                 });
                 but.on('pointerout', function () {
-                    this.change(0x3c3c3c);
+                    this.change( this.bgColor);
                 });
                 but.on('pointerdown', function () {
 
                     _this.music.play ('clicka')
             
                     this.change (0xff3333);
+
                     switch ( this.id ) {
                         case 'buts1' :
                             _this.leaveGame();
@@ -2301,7 +2334,7 @@ window.onload = function () {
 
         initialize:
 
-        function MyButton ( scene, id, x, y, width, height, text, bgColor = 0x3a3a3a )
+        function MyButton ( scene, id, x, y, width, height, text, bgColor=0xf2f2f2, hoverColor=0x99ffdd  )
         {
 
             Phaser.GameObjects.Container.call(this, scene)
@@ -2316,15 +2349,21 @@ window.onload = function () {
             this.isActive = false;
             this.isClicked = false;
             this.bgColor = bgColor;
-            
-            this.shape = scene.add.graphics ( { fillStyle: { color: bgColor, alpha: 1 } } );
-            this.shape.fillRoundedRect ( -width/2, -height/2, width, height, height * 0.1);
+            this.hoverColor = hoverColor;
+
+            this.shape = scene.add.graphics ();
+
+            this.shape.fillStyle ( bgColor, 1);
+            this.shape.fillRoundedRect ( -width/2, -height/2, width, height, height * 0.15 );
+
+            this.shape.lineStyle ( 1, 0x6c6c6c )
+            this.shape.strokeRoundedRect ( -width/2, -height/2, width, height, height * 0.15 );
 
             var txtConfig = { 
                 fontFamily: 'Trebuchet MS', 
-                //fontStyle : 'bold',
+                fontStyle : 'bold',
                 fontSize: Math.floor(height * 0.38), 
-                color: '#fff' 
+                color: '#0a0a0a' 
             };
 
             this.text = scene.add.text ( 0, 0, text, txtConfig ).setOrigin(0.5);
@@ -2340,8 +2379,10 @@ window.onload = function () {
 
             this.shape.clear();
             this.shape.fillStyle( clr, 1);
-            this.shape.fillRoundedRect ( -this.width/2, -this.height/2, this.width, this.height, 5);
+            this.shape.fillRoundedRect ( -this.width/2, -this.height/2, this.width, this.height, this.height * 0.15 );
 
+            this.shape.lineStyle ( 1, 0x3a3a3a )
+            this.shape.strokeRoundedRect ( -this.width/2, -this.height/2, this.width, this.height, this.height * 0.15 );
         },
     
         
@@ -2368,7 +2409,7 @@ window.onload = function () {
             this.player = player;
             this.rems = rems;
 
-            this.shape = scene.add.graphics ( { fillStyle: { color: 0xffffcc,  alpha:0.8 }, lineStyle : { color: 0x9a9a9a, width:1 } });
+            this.shape = scene.add.graphics ( { fillStyle: { color: 0xf2f2f2,  alpha:0.8 }, lineStyle : { color: 0x9c9c9c, width:1 } });
             this.shape.fillRoundedRect ( -width/2, -height/2, width, height, 3 );
             this.shape.strokeRoundedRect ( -width/2, -height/2, width, height, 3 );
 
@@ -2376,7 +2417,7 @@ window.onload = function () {
                 left = -width/2;
 
             var txtConfig = { 
-                fontFamily: 'Arial', 
+                fontFamily: 'Trebuchet MS', 
                 fontStyle: 'bold',
                 fontSize: Math.floor(height * 0.3), 
                 color: '#333' 
@@ -2395,7 +2436,7 @@ window.onload = function () {
                 this.graphic.fillRect ( gX + i * ( gS + gSp ), gY, gS, gS );
             }
 
-            this.graphic.fillStyle ( player == 'self' ? 0x00cc00 : 0xff3333, 1);
+            this.graphic.fillStyle ( player == 'self' ? 0x00b300 : 0xff3333, 1);
             for ( var i=0; i<rems; i++) {
                 this.graphic.fillRect ( gX + i * ( gS + gSp ), gY, gS, gS );
             }
@@ -2406,7 +2447,7 @@ window.onload = function () {
 
         },
 
-        updateRems : function ( rems ) {
+        updateRems : function () {
         //..
             this.rems = this.rems += -1;
 
@@ -2421,16 +2462,18 @@ window.onload = function () {
             this.graphic.clear();
 
             this.graphic.fillStyle ( 0x8a8a8a, 1);
-                for ( var i=0; i< this.len ; i++) {
-                    this.graphic.fillRect ( gX + i * ( gS + gSp ), gY, gS, gS );
-                }
 
-                this.graphic.fillStyle ( this.player == 'self' ? 0x00cc00 : 0xff3333, 1);
-                for ( var i=0; i<this.rems; i++) {
-                    this.graphic.fillRect ( gX + i * ( gS + gSp ), gY, gS, gS );
-                }
-
+            for ( var i=0; i< this.len ; i++) {
+                this.graphic.fillRect ( gX + i * ( gS + gSp ), gY, gS, gS );
             }
+
+            this.graphic.fillStyle ( this.player == 'self' ? 0x00b300 : 0xff3333, 1);
+            //this.graphic.fillStyle ( this.player == 'self' ? 0x00cc00 : 0xff3333, 1);
+            for ( var i=0; i<this.rems; i++) {
+                this.graphic.fillRect ( gX + i * ( gS + gSp ), gY, gS, gS );
+            }
+
+        }
 
     });
 
@@ -2441,7 +2484,7 @@ window.onload = function () {
 
         initialize:
 
-        function Cell ( scene, id, x, y, width, height, row, col, bgColor = 0x3c3c3c )
+        function Cell ( scene, id, x, y, width, height, row, col, bgColor = 0x4d4d33, hoverColor = 0x6b6b47 )
         {
             Phaser.GameObjects.Container.call(this, scene)
 
@@ -2451,9 +2494,8 @@ window.onload = function () {
             this.x = x;
             this.y = y;
             
-            this.bgColor = 0x3c3c3c;
-
-            this.bgColor2 = 0x4e4e4e;
+            this.bgColor = bgColor;
+            this.hoverColor = hoverColor;
 
             this.rect = scene.add.rectangle ( 0, 0, width, height, this.bgColor, 1 ).setStrokeStyle ( 1, 0xdedede, 0.9 );
 
@@ -2480,7 +2522,7 @@ window.onload = function () {
             //
             this.rect.setFillStyle ( clr, alpha );
 
-        }
+        }   
 
     });
 
@@ -2509,7 +2551,7 @@ window.onload = function () {
             this.rot = rot;
             this.player = player;
             this.code = code;
-            this.bgColor = ( player == 'self' ? 0x66ff66 : 0xffcc66 );
+            this.bgColor = ( player == 'self' ? 0x00cc00 : 0xffcc66 );
             this.index = index;
             this.isHidden = !isHidden;
 
@@ -2597,9 +2639,9 @@ window.onload = function () {
             this.name = name;
             this.max = max;
             this.scene = scene;
-            this.bgColor = 0xf3f3f3;
+            this.bgColor = 0xffffff;
 
-            this.shape = scene.add.graphics ( { fillStyle: { color: this.bgColor ,  alpha: 0.7 }, lineStyle : { color: 0xa4a4a4, width:1 } });
+            this.shape = scene.add.graphics ( { fillStyle: { color: this.bgColor ,  alpha: 1 }, lineStyle : { color: 0x9c9c9c, width:1 } });
             this.shape.fillRoundedRect ( -width/2, -height/2, width, height, 3);
             this.shape.strokeRoundedRect ( -width/2, -height/2, width, height, 3);
 
@@ -2611,7 +2653,7 @@ window.onload = function () {
                 fontFamily: 'Trebuchet MS', 
                 fontSize: Math.floor( height * 0.36 ), 
                 fontStyle: 'bold',
-                color: '#333' 
+                color: '#0a0a0a' 
             };
 
             var winTxtConfig = { 
@@ -2657,14 +2699,14 @@ window.onload = function () {
 
             this.turnTxt.text = (turn == true) ? '· Your Turn ·' : '';
 
-            this.changeBackground ( !turn ? 0xf3f3f3 : 0xffff99, 0.7 );
+            this.changeBackground ( !turn ? this.bgColor : 0xffff99, 1 );
 
         },
         ready : function () {
 
             this.turnTxt.text = '· Ready ·';
 
-            this.changeBackground ( 0x66ffcc );
+            this.changeBackground ( 0x99ffdd );
 
         },
         reset : function () {
@@ -2724,76 +2766,3 @@ window.onload = function () {
    
 
 } 
-
-    
-    /* FBInstant.getLeaderboardAsync("global_leaderboard")
-        .then(leaderboard => leaderboard.getEntriesAsync(3, 0))
-            .then(entries => {
-            console.log("TOP SCORES")
-            for (var i = 0; i < entries.length; i++) {
-                console.log("#" + entries[i].getRank() + " " + entries[i].getPlayer().getName() + ": " + entries[i].getScore());
-            }
-        }).catch(error => console.error(error)); */
-        
-    
-/*
-
-FBInstant.initializeAsync().then(function() {        
-    
-    // Start loading game assets here
-    FBInstant.setLoadingProgress(100);
-
-    FBInstant.player.getDataAsync(["best"]).then(function(data){
-        if(typeof data["best"] !== "undefined"){
-            console.log ( data['best'] );
-            savedData.best = data['best'].toString();
-        }
-    });
-
-    FBInstant.startGameAsync().then(function() {
-
-        facebookStuff.name = FBInstant.player.getName();
-        facebookStuff.picture = FBInstant.player.getPhoto();
-
-        parentDiv = document.getElementById('game_div');
-    
-        config = {
-
-            type: Phaser.AUTO,
-            width: parentDiv.clientWidth,
-            height: parentDiv.clientHeight,
-            backgroundColor: '#333',
-            audio: {
-                disableWebAudio: true
-            },
-            parent:'game_div',
-            scene: [ SceneA, SceneB, EndFrame ]
-
-        };
-
-        game = new Phaser.Game(config);
-
-        // Retrieving context and player information can only be done
-        // once startGameAsync() resolves
-        var contextId = FBInstant.context.getID();
-        var contextType = FBInstant.context.getType();
-
-        var playerName = FBInstant.player.getName();
-        var playerPic = FBInstant.player.getPhoto();
-        var playerId = FBInstant.player.getID();
-
-        // Once startGameAsync() resolves it also means the loading view has 
-        // been removed and the user can see the game viewport
-
-
-    });
-                
-
-});
-    
-*/
-
-
-
-
-
