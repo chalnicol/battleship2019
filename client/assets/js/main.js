@@ -29,8 +29,9 @@ window.onload = function () {
 
         var parentDiv = document.getElementById('game_div');
         
-        var pW = parentDiv.clientWidth;
-            pH = pW * 16/9;
+        
+        var pH = parentDiv.clientHeight, pW = pH * 9/16;
+        
         
         config = {
 
