@@ -33,15 +33,19 @@ window.onload = function () {
 
     function readDeviceOrientation () {
 
+        if ( window.orientation == undefined ) return;
+
+        console.log ('-->')
+
+        var portrait = Math.abs ( window.orientation) == 90;
+
         var btn_enter =  document.getElementById('btnEnter');
 
-        //console.log ( this.orientation );
-
-        btn_enter.disabled = ( Math.abs (this.orientation) == 90 ) ? true : false; 
+        btn_enter.disabled = ( portrait ) ? true : false; 
 
         var message_div =  document.getElementById('messageDiv');
 
-        message_div.innerHTML = ( Math.abs (this.orientation) == 0 ) ? '' : '<small>Please set device orientation to portrait.</small>';
+        message_div.innerHTML = ( !portrait ) ? '' : '<small>Please set device orientation to portrait.</small>';
 
     }
 
@@ -134,7 +138,8 @@ window.onload = function () {
 
             var _this = this;
             
-            this.loadtxt = this.add.text ( config.width/2, config.height/2, 'Loading Game Files..', { color: '#000', fontSize: 15 }).setOrigin(0.5);
+
+            this.loadtxt = this.add.text ( config.width/2, config.height/2, 'Loading Game Files..', { color: '#000', fontSize: config.height * 0.02 }).setOrigin(0.5);
 
             this.load.audioSprite('sfx', 'client/assets/sfx/fx_mixdown.json', [
                 'client/assets/sfx/sfx.ogg',
