@@ -51,7 +51,7 @@ window.onload = function () {
 
     function enterGame () {
 
-        var maxW = 414;
+        var maxW = 414, minHeight = ;
 
         var container = document.getElementById('game_container');
 
