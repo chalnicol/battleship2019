@@ -25,19 +25,68 @@ window.onload = function () {
         }
     }
 
+    readDeviceOrientation();
+
+    this.addEventListener("orientationchange", function() {
+        readDeviceOrientation()
+    });
+
+    function readDeviceOrientation () {
+
+        var btn_enter =  document.getElementById('btnEnter');
+
+        //console.log ( this.orientation );
+
+        btn_enter.disabled = ( Math.abs (this.orientation) == 90 ) ? true : false; 
+
+        var message_div =  document.getElementById('messageDiv');
+
+        message_div.innerHTML = ( Math.abs (this.orientation) == 0 ) ? '' : '<small>Please set device orientation to portrait.</small>';
+
+    }
+
     function enterGame () {
 
-        var parentDiv = document.getElementById('game_div');
+        var maxW = 414;
+
+        var container = document.getElementById('game_container');
+
+        var contW = container.clientWidth,
+            contH = container.clientHeight;
+
+        var tmpWidth = contW > maxW ? maxW : contW,
+            tmpHeight = Math.ceil(tmpWidth * 16/9);
+
+        console.log ( 'init', tmpHeight, contH )
+
+        var gameH = 0, gameW = 0;
+
+        if ( tmpHeight >= contH ) {
+
+            gameH = contH;
+            gameW = Math.ceil(gameH * 9/16);
+
+            console.log ( 'game dimensions adjusted by screen height' )
+
+        }else {
+
+            gameW = tmpWidth;
+            gameH = tmpHeight;
+            console.log ( 'game dimensions adjusted by screen width' )
+        }
+
+        var game_div = document.getElementById('game_div');
+        game_div.style.width = gameW + 'px';
+        game_div.style.height = gameH + 'px';
+        //game_div.style.overflow = 'hidden'
         
-        
-        var pH = parentDiv.clientHeight, pW = pH * 9/16;
-        
+
         
         config = {
 
             type: Phaser.AUTO,
-            width: pW,
-            height: pH,
+            width: gameW,
+            height: gameH,
             backgroundColor: '#dedede',
             audio: {
                 disableWebAudio: false
@@ -1391,11 +1440,9 @@ window.onload = function () {
 
                 var cnt = 96;
 
-                //var deg = 360/cnt;
-
                 var pW = config.width * 0.008;
 
-                var gSize = (config.width * 0.95 / 10) * 0.5;
+                var gSize = ( config.width * 0.95 / 10) * 0.5;
 
                 var color = new Phaser.Display.Color();
 
@@ -1431,7 +1478,8 @@ window.onload = function () {
 
             }else {
 
-                var radius = 10;
+
+                var radius = (config.width * 0.95 / 10)  * 0.3;
 
                 //not hit...
                 for ( var i=0; i<3; i++) {
@@ -1443,8 +1491,8 @@ window.onload = function () {
 
                         targets : circ,
 
-                        scaleX : 3.5,
-                        scaleY : 3.5,
+                        scaleX : 2.5,
+                        scaleY : 2.5,
                         alpha : 0,
                         ease  : 'Power3',
                         delay : i * 150,
@@ -1485,6 +1533,8 @@ window.onload = function () {
                     
                 }
 
+                this.fieldY += toAdd;
+
             }else {
 
                 for ( var i in this.cell ) {
@@ -1495,6 +1545,8 @@ window.onload = function () {
                     this.gameData ['oppo'].grid [i].y = this.cell [i].y;
                     
                 }
+
+                this.fieldY += -toAdd;
 
                 this.plyrIndicator ['oppo'].y = config.height * 0.83;
 
@@ -1595,7 +1647,7 @@ window.onload = function () {
             var pW = config.width * 0.75,
                 pH = config.height * 0.15,
                 pX = (config.width - pW)/2,
-                pY = config.height * 0.3;
+                pY = this.fieldY + (( this.fieldHeight - pH )/2);
 
             this.readyGraphic = this.add.graphics().setDepth (9999);
 
@@ -2562,10 +2614,10 @@ window.onload = function () {
             this.shape.fillRect ( -width/2, -height/2, width, height);
         
             var txtConfig = { 
-                fontFamily: 'Verdana', 
-                fontSize: Math.floor( size * 0.25), 
+                fontFamily: 'Arial', 
+                fontSize: Math.floor( size * 0.27), 
                 fontStyle: 'bold',
-                color: '#333' 
+                color: '#0a0a0a' 
             };
 
             var rotation = ( rot == 0 ) ? 0 : Math.PI/180*90;
