@@ -171,6 +171,8 @@ window.onload = function () {
 
             this.loadtxt.destroy();
 
+            this.isBlitz = true;
+
             this.initializeSound();
 
             this.initGraphics();
@@ -180,6 +182,7 @@ window.onload = function () {
             this.initSocketIOListeners();
 
             this.createButtons();
+            this.createSelect ();
 
             setTimeout ( function () {
                 socket.emit ('getPlayersOnline', null );
@@ -329,34 +332,19 @@ window.onload = function () {
 
                     _this.music.play('clicka');
 
+                    _this.removeButtons();
+
+
                     var isSinglePlayer = ( this.id == 'vscomputer' ) ? true : false;
 
-                    if ( isSinglePlayer ) {
-
-                        _this.removeButtons();
-
-                        var toSend = {
-                            'isSinglePlayer' : true,
-                            'isTimed' : false
-                        }
-
-                        socket.emit ('enterGame', toSend );
-
-                    }else {
-
-                        _this.removeButtons();
-
-                        _this.showWaitScreen ();
-
-                        var toSend = {
-                            'isSinglePlayer' : false,
-                            'isTimed' : false
-                        }
-
-                        socket.emit ('enterGame', toSend );
-
+                    var toSend = {
+                        'isSinglePlayer' : isSinglePlayer,
+                        'isTimed' : _this.isBlitz
                     }
-                
+
+                    socket.emit ('enterGame', toSend );
+
+                    if ( !_this.isSinglePlayer ) _this.showWaitScreen ();
 
                 });
 
@@ -372,6 +360,63 @@ window.onload = function () {
                 this.buts.push ( bute );
 
             }
+
+        },
+        createSelect: function () {
+
+            this.selectElements = [];
+
+            var rW = config.width * 0.05,
+                rH = rW,
+                rX = config.width * 0.4,
+                rY = config.height *0.5;
+
+            var rect = this.add.rectangle ( rX, rY, rW, rH ).setStrokeStyle ( 1, 0x6a6a6a );
+
+            var rectb = this.add.rectangle ( rX, rY,  rW *0.6, rH *0.6, 0xff0000, 1 );
+
+            rectb.setVisible ( this.isBlitz );
+
+            var rectc = this.add.rectangle ( rX - rW/2, rY - rH/2,  config.width *0.3, rH ).setOrigin (0).setInteractive();
+
+            var _this = this;
+
+            rectc.on('pointerdown', function () {
+
+                _this.music.play ('clicka');
+
+                _this.isBlitz = !_this.isBlitz;
+
+                rectb.setVisible ( _this.isBlitz );
+
+                txta.text =  _this.isBlitz ? '* 30 secs preparation, 15 secs per turn' : '* Untimed'
+            });
+
+
+            var sp = config.width *0.05;
+
+            var configTxt = {
+                'color' : '#3a3a3a',
+                'fontFamily' : 'Trebuchet MS',
+                'fontSize' : rH *0.7
+            }
+
+            var txt = this.add.text ( rX + sp, rY, 'Blitz Game', configTxt ).setOrigin (0, 0.5);
+
+            var configTxta = {
+                'color' : '#ff6666',
+                'fontFamily' : 'Trebuchet MS',
+                'fontSize' : rH *0.6
+            }
+
+            var spY = config.height *0.04;
+
+            var txtP = _this.isBlitz ? '* 30 secs preparation, 15 secs per turn' : '* Untimed';
+
+            var txta = this.add.text ( config.width/2, rY + spY , txtP, configTxta ).setOrigin (0.5);
+
+
+            this.selectElements = [ rect, rectb, rectc, txt, txta ];
 
         },
         showWaitScreen : function () {
@@ -440,6 +485,8 @@ window.onload = function () {
                
                 _this.createButtons();
 
+                _this.createSelect ();
+
             });
 
             this.buts.push ( bute );
@@ -463,6 +510,11 @@ window.onload = function () {
                 this.buts[i].destroy();
             }
             this.buts = [];
+
+            for ( var i in this.selectElements ) {
+                this.selectElements[i].destroy();
+            }
+            this.selectElements = [];
 
         },
         initGame : function ( data ) {
@@ -490,6 +542,8 @@ window.onload = function () {
         },
         init: function (data) {
 
+            console.log (data);
+
             this.ship = {}; 
             this.player = {};
             this.plyrIndicator = {};
@@ -505,17 +559,25 @@ window.onload = function () {
             this.trashedElements = [];
 
             this.gameOn = false;
+
+            this.gamePhase = 'prep';
+
             this.shipActive = '';
             this.turn = '';  
             this.view = '';
-            this.blitz = false;
             this.winner = '';   
             this.leftGame = false;
+            this.isTicking = false;
+            
+            this.timerCount = 0;
+            this.prepTime = 10;
+            this.blitzTime = 10;
 
-
+            this.isBlitz = data.isTimed;
             this.isSinglePlayer = data.isSinglePlayer;
             this.tmpPlayers = data.players;
-            
+
+
         },
         preload: function ()
         {
@@ -544,6 +606,7 @@ window.onload = function () {
 
             this.createGraphicLine ();
 
+            if ( this.isBlitz ) this.startTimer ( this.prepTime );
 
         },
         initSocketIOListeners : function () {
@@ -584,6 +647,8 @@ window.onload = function () {
             socket.on ('gridClickResult', function (data) {
 
                 //update data..
+                if ( _this.isTicking ) _this.stopTimer();
+
                 for ( var i=0; i<100; i++) {
 
                     _this.gameData ['self'].grid [i].isTrashed = data.self.grid[i].isTrashed;
@@ -628,7 +693,7 @@ window.onload = function () {
                         _this.gameOn = false;
                         
                         setTimeout ( function () {
-                            _this.endGame();
+                            _this.endGame( data.winner);
                         }, 800);
 
                     }else {
@@ -636,9 +701,10 @@ window.onload = function () {
                         if ( _this.turn == 'self' && _this.view == 'self') {
                             setTimeout ( function () {
                                 _this.activateGrid(); 
+                               
                             }, 800);
                         }
-                        
+                        if ( _this.isBlitz ) _this.resetTimer (); 
 
                     }
 
@@ -661,6 +727,20 @@ window.onload = function () {
 
                 _this.startGame();
 
+            });
+            socket.on ('timeRanOut', function ( data ) {
+                
+
+                if ( _this.gameOn ) {
+
+                    if ( _this.isTicking ) _this.stopTimer();
+
+                    _this.plyrIndicator [ _this.turn ].forceZero ();
+
+                    _this.endGame( data.winner);
+                }
+                
+              
             });
 
         },
@@ -710,7 +790,7 @@ window.onload = function () {
 
                 var yp = ( i == 'self' ) ? config.height * 0.055 : config.height * 0.83;
 
-                var pi = new PlayerIndicator (this, i, fsX, yp, fW, fH, this.player[i].name, 3 );
+                var pi = new PlayerIndicator (this, i, fsX, yp, fW, fH, this.player[i].name );
 
                 this.plyrIndicator[i] = pi;
             }
@@ -727,6 +807,8 @@ window.onload = function () {
 
             this.tmpText = this.add.text ( tx, ty, 'Versus :', txtConfig ) ;
             
+            this.plyrIndicator ['self'].setTimer ( false, this.isBlitz, this.prepTime );
+
         },
         createGraphicLine : function ( proper = false ) {
 
@@ -1169,6 +1251,64 @@ window.onload = function () {
             this.buts = [];
         
         },
+        stopTimer : function () {
+
+            this.isTicking = false;
+            
+            clearInterval ( this.timer );
+        },
+        resetTimer : function () {
+
+            if ( this.isTicking ) this.stopTimer ();
+            
+            this.timerCount = 0;
+            
+            this.plyrIndicator[this.turn].resetTimer ();
+
+            this.startTimer ( this.blitzTime );
+            
+        },   
+        startTimer : function ( max ) {
+
+            var _this = this;
+
+            this.isTicking = true;
+
+            this.timer = setInterval ( function () {
+
+                _this.timerCount += 1;
+
+                //console.log ( max - _this.timerCount );
+
+                if ( _this.gamePhase == 'prep' ) {
+                    _this.plyrIndicator ['self'].tick ( max - _this.timerCount );
+                }else {
+                    _this.plyrIndicator [ _this.turn ].tick ( max - _this.timerCount );
+                }
+
+                if ( _this.timerCount >= max ) {
+                    _this.stopTimer();
+
+                    _this.timerEnds ();
+
+                }
+
+            }, 1000 );
+
+        },
+        timerEnds : function () {
+
+            switch ( this.gamePhase ) {
+                case 'prep' :
+                    this.readyFleet ();
+                break;
+                case 'proper' :
+                    this.endGame ( this.turn == 'self' ? 'oppo' : 'self' );
+                break;
+                default:
+            }
+
+        },
         randomFleet: function () {
             
             //start random...
@@ -1188,6 +1328,8 @@ window.onload = function () {
 
         },
         readyFleet: function () {
+
+            if ( this.isTicking ) this.stopTimer ();
 
             if ( this.shipActive != '' ) {
 
@@ -1353,11 +1495,15 @@ window.onload = function () {
 
             this.gameOn = true;
         
+            this.gamePhase = 'proper';
+
+            this.timerCount = 0;
+
             this.view = 'self';
 
             this.plyrIndicator ['self'].reset();
             this.plyrIndicator ['oppo'].reset();
-            
+
             this.removeButtons(true);
 
             this.moveField ();
@@ -1370,20 +1516,34 @@ window.onload = function () {
 
             this.showLegends();
 
+
             var _this = this;
 
             setTimeout ( function () {
-
-                _this.plyrIndicator [ _this.turn ].isTurn( true );
 
                 _this.createButtons ( true );
 
                 _this.activateGrid( _this.turn == 'self' );
 
-                if (_this.isSinglePlayer && _this.turn == 'oppo') _this.autoPick();
+                _this.plyrIndicator [ _this.turn ].setTurn ( true );
+
+                if ( _this.isBlitz ) {
+                    
+                    _this.plyrIndicator [ _this.turn ].setTimer ( true, true, _this.blitzTime );
+
+                    _this.startTimer ( _this.blitzTime );
+                
+                }
 
             }, 800 );
-            
+        
+           
+            if ( this.isSinglePlayer && this.turn == 'oppo') {
+                setTimeout ( function () {
+                    _this.autoPick();
+                }, 2100 );
+            }
+
         },
         switchView : function () {
 
@@ -1406,14 +1566,26 @@ window.onload = function () {
 
             if ( this.gameOn ) {
 
+                if ( this.isTicking ) this.stopTimer();
+
                 this.turn = (this.turn == 'self') ? 'oppo' : 'self';
 
                 this.music.play('message');
 
-                this.plyrIndicator['self'].isTurn ( this.turn == 'self' );
-                this.plyrIndicator['oppo'].isTurn ( this.turn == 'oppo');
-                
-            
+                this.timerCount = 0;
+
+                this.plyrIndicator[ this.turn == 'self' ? 'oppo' : 'self' ].reset();
+
+                this.plyrIndicator[this.turn].setTurn ( true );
+
+                if ( this.isBlitz ) {
+
+                    this.plyrIndicator[this.turn].setTimer ( true, true, this.blitzTime );
+                    
+                    this.startTimer ( this.blitzTime );
+
+                }
+
                 if ( this.isSinglePlayer ) {
 
                     var _this = this;
@@ -1961,6 +2133,8 @@ window.onload = function () {
         },
         makePick: function ( gridPost ) {
 
+            if ( this.isTicking ) this.stopTimer();
+            
             var opp = ( this.turn == 'self' ) ? 'oppo' : 'self';
 
             var isHit = this.isHit ( gridPost, opp );
@@ -1975,6 +2149,7 @@ window.onload = function () {
 
             this.activateGrid (false);
 
+            
             var _this = this;
 
             if ( !isHit ) {
@@ -2019,7 +2194,9 @@ window.onload = function () {
 
                     this.gameOn = false;
                     setTimeout ( function () {
-                        _this.endGame();
+
+                        _this.endGame( _this.turn );
+
                     }, 800);
                     
                 }else {
@@ -2037,7 +2214,8 @@ window.onload = function () {
                         }, 800);
 
                     }
-                    
+                    if ( this.isBlitz ) this.resetTimer ();
+
                 }
 
             }
@@ -2048,19 +2226,19 @@ window.onload = function () {
 
             //...............
             var pi = this.plyrIndicator[player];
-            var x = config.width * 0.92,
-                y = pi.y + pi.height * 0.2,
+            var x = config.width * 0.08
+                y = pi.y + pi.height * 0.3,
                 r = config.width * 0.08;
 
             var bgcolor = !isHit ? 0xff3333 : 0x00cc00
 
-            this.hitStar = this.add.star ( x, y, 30, r*0.85, r, bgcolor, 1 ).setScale(0.3).setStrokeStyle ( 1, 0x9c9c9c, 0.9  );
+            this.hitStar = this.add.star ( x, y, 30, r*0.85, r, bgcolor, 1 ).setScale(0.3).setStrokeStyle ( 1, 0x9c9c9c, 0.9  ).setDepth (9999);
 
             var txt = isHit ? 'Hit' : 'Miss';
 
             var hitTextConfig = { color : '#f5f5f5', fontSize : r/2, fontFamily : 'Trebuchet MS', fontStyle : 'bold' };
 
-            this.hitText = this.add.text ( x, y, txt, hitTextConfig ).setOrigin (0.5).setScale(0.3).setRotation ( Math.PI/180 * 45 );
+            this.hitText = this.add.text ( x, y, txt, hitTextConfig ).setOrigin (0.5).setScale(0.3).setRotation ( Math.PI/180 * 45 ).setDepth (9999);
 
             this.tweens.add ({
                 targets : [this.hitStar, this.hitText],
@@ -2141,14 +2319,12 @@ window.onload = function () {
             return true;
 
         },
-        endGame: function () {
+        endGame: function ( winner ) {
 
             this.gameOn = false;
 
             this.removeButtons();
             
-            var winner = this.turn;
-
             this.player [ winner ].wins += 1;
 
             this.winner = winner;
@@ -2337,6 +2513,8 @@ window.onload = function () {
 
             this.player['self'].resetData();
             this.player['oppo'].resetData();
+
+            this.plyrIndicator['self'].setTimer ( false, this.isBlitz, this.prepTime )
             
         },
         resetGame: function () {
@@ -2344,6 +2522,9 @@ window.onload = function () {
             if (this.view !== 'self' ) this.switchView ();
 
             if ( this.isEndScreen ) this.removeEndScreen();
+
+            this.timerCount = 0;
+            this.gamePhase = 'prep';
 
             this.moveField (true);
             this.removeTrashedElements ();
@@ -2363,11 +2544,15 @@ window.onload = function () {
                 _this.createFleet();
                 _this.createButtons ()
 
+                
+                if ( _this.isBlitz ) _this.startTimer ( _this.prepTime );
+
             }, 500 );
 
         },
         leaveGame :  function () {
 
+            clearInterval ( this.timer );
 
             socket.emit ('leaveGame');
 
@@ -2682,7 +2867,7 @@ window.onload = function () {
 
         initialize:
 
-        function PlayerIndicator ( scene, id, x, y, width, height, name, max )
+        function PlayerIndicator ( scene, id, x, y, width, height, name )
         {
             Phaser.GameObjects.Container.call(this, scene)
 
@@ -2695,7 +2880,7 @@ window.onload = function () {
             this.height = height;
             this.winClr = ( id == 'self' ? 0x00cc00 :  0xff3333 );
             this.name = name;
-            this.max = max;
+            this.max = 0;
             this.scene = scene;
             this.bgColor = 0xffffff;
 
@@ -2725,16 +2910,38 @@ window.onload = function () {
 
             this.winTxt = scene.add.text ( left + (width * 0.04), top + height * 0.53, '✪ Wins: 0', winTxtConfig ).setOrigin(0);
 
+
+            var taX = left + width*0.94;
+
             var txtConfig2 = { 
                 fontFamily: 'Trebuchet MS', 
                 fontSize: Math.floor( height * 0.25 ), 
                 fontStyle: 'bold',
-                color: '#3c3c3c'
+                color: '#6a6a6a'
             };
     
-            this.turnTxt = this.scene.add.text ( left + width*0.98, top + height * 0.4, '', txtConfig2 ).setOrigin(1);
+            this.txta = this.scene.add.text ( taX, top + height * 0.15, '', txtConfig2 ).setOrigin(1, 0);
+
+            var txtConfig3 = { 
+                fontFamily: 'Trebuchet MS', 
+                fontSize: Math.floor( height * 0.38 ), 
+                fontStyle: 'bold',
+                color: '#6a6a6a'
+            };
     
-            this.add ([ this.shape, this.text, this.winTxt, this.turnTxt ]); // add elements to this container..
+            this.txtb = this.scene.add.text ( taX, top + height * 0.42, '', txtConfig3 ).setOrigin(1, 0);
+
+            var rH = height *0.63, 
+                rW = width * 0.016,
+                rX = left + width *0.95, 
+                rY = top + ( height - rH )/2 ;
+
+            this.timerH = rH;
+            this.timerY = rY;
+
+            this.recta = this.scene.add.rectangle ( rX, rY, rW, rH, 0x33ff33, 1 ).setOrigin (0).setVisible (false);
+
+            this.add ([ this.shape, this.text, this.winTxt, this.txta, this.txtb, this.recta  ]); // add elements to this container..
 
             scene.children.add ( this ); //add to scene...
             
@@ -2745,7 +2952,57 @@ window.onload = function () {
             this.winTxt.text = '✪ Wins: ' + wins;
 
         },
-        changeBackground : function ( clr, alpha = 1 ) {
+
+        forceZero : function () {
+
+            this.txtb.text = '00:00:00';
+
+            this.recta.setVisible ( false );
+
+        },
+        setTimer : function ( proper=false, timed=true, max ) {
+            
+            this.max = max;
+
+            this.txta.text = proper ? '· Your Turn' : '· Preparation';
+
+            if ( timed ) {
+
+                this.recta.setVisible ( true );
+            
+                this.resetTimer();
+
+            }
+            
+        },
+        resetTimer : function () {
+
+            this.recta.height = this.timerH;
+            this.recta.y = this.timerY;
+            
+            this.recta.setFillStyle ( 0x33ff33, 1 );
+
+            this.txtb.text = '00:00:' + this.max;
+        },
+        
+        tick : function ( cnt ) {
+
+             var top = -this.height/2;
+
+            var txta = cnt < 10 ? '0'+cnt : cnt;
+
+            this.txtb.text = '00:00:' + txta;
+
+            var h = cnt/this.max * this.timerH;
+
+            this.recta.height = h;
+
+            this.recta.y = this.timerY + ( this.timerH - h );
+
+            if  ( cnt < 5 ) this.recta.setFillStyle ( 0xff0000, 1 );
+
+        },
+        changeBackground : function ( clr, alpha=1 ) {
 
             this.shape.clear();
             this.shape.fillStyle( clr, alpha );
@@ -2753,23 +3010,30 @@ window.onload = function () {
             this.shape.strokeRoundedRect ( -this.width/2, -this.height/2, this.width, this.height, 3);
             
         },
-        isTurn: function ( turn=true ) {
+        setTurn : function ( turn=true ) {
 
-            this.turnTxt.text = (turn == true) ? '· Your Turn ·' : '';
+            this.txta.text = (turn == true) ? '· Your Turn' : '';
 
             this.changeBackground ( !turn ? this.bgColor : 0xffff99, 1 );
 
         },
         ready : function () {
 
-            this.turnTxt.text = '· Ready ·';
+            this.txta.text = '· Ready ·';
+
+            this.txtb.text = '';
+
+            this.recta.setVisible ( false );
 
             this.changeBackground ( 0x99ffdd );
 
         },
         reset : function () {
 
-            this.turnTxt.text = '';
+            this.txta.text = '';
+            this.txtb.text = '';
+            this.recta.visible = false;
+
             this.changeBackground ( this.bgColor, 0.7  );
         },
         

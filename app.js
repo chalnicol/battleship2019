@@ -17,7 +17,7 @@ app.use('/client', express.static(__dirname + '/client'));
 //serv.listen(2000);
 serv.listen(process.env.PORT || 2000);
 
-console.log("Server started.");
+//console.log("Server started.");
 
 var socketList = {};
 var playerList = {};
@@ -66,7 +66,7 @@ GameRoom = function ( id, isTimed=false ) {
 	var rm = {
 
 		id : id,
-		prepTime : 15,
+		prepTime : 10,
 		blitzTime : 10,
 		turn : 0,
 		counter : 0,
@@ -78,77 +78,122 @@ GameRoom = function ( id, isTimed=false ) {
 		isHit : false,
 		isTimed : isTimed,
 		isGameOn : false,
-		timer : null
+		isTicking : false,
+		timer : null,
+		phase : 'prep'
 
 	}
-
 
 	rm.stopTimer = function () {
 		
 		clearInterval( rm.timer );
 
-		rm.counter = 0;
+		rm.isTicking = false;
 	}
-	
 	rm.startTimer = function ( max ) {
 		//..
-		clearInterval ( rm.timer );
+
+		rm.isTicking = true;
+
+		//clearInterval ( rm.timer );
+
 		rm.timer = setInterval ( function () {
+
 			rm.counter += 1;
-			//console.log ( rm.counter );
+			
+			//console.log ( max - rm.counter );
+			
 			if ( rm.counter >= max) {
-				rm.stopTimer();
+				
+				rm.stopTimer ();
+
+				if ( rm.phase == 'prep' ) {
+
+					rm.startGame ();
+				}
+				else if ( rm.phase == 'proper' ) {
+
+					rm.endGame ();
+
+					timeRanOut ( rm.id )
+				}
+				
 			}
 
 		}, 1000 );
 		
 	}
-
 	rm.initGame  = function () {
 		//..
 		rm.isClosed = true;
 
-		if ( rm.isTimed ) rm.startTimer( rm.prepTime );
-	}
-
-	rm.startGame  = function () {
-		//..
 		rm.isGameOn = true;
 
-		if ( rm.isTimed ) rm.startTimer( rm.blitzTime);
-	}
-
-	rm.endGame = function () {
-		
-		rm.isGameOn = false;
-
-		rm.stopTimer ();
-
-	}
-
-	rm.resetGame = function () {
-		//..
-		rm.turn = rm.turn == 0 ? 1 : 0;
-		rm.clickedPost = -1;
-		rm.isHit = false;
 		rm.counter = 0;
 
+		if ( rm.isTimed ) rm.startTimer( rm.prepTime );
 	}
+	rm.startGame  = function () {
+		//..
 
+		rm.isClosed = true;
+
+		rm.phase = 'proper';
+
+		if ( rm.isTicking ) rm.stopTimer ();
+
+		rm.counter = 0;
+
+		if ( rm.isTimed ) rm.startTimer( rm.blitzTime );
+
+		
+
+	}
+	rm.endGame = function () {
+
+		////console.log ('\n --> Game has ended', rm.id );
+
+		rm.isGameOn = false;
+
+		if (rm.isTicking) rm.stopTimer ();
+
+	}
+	rm.resetGame = function () {
+
+		////console.log ('\n --> Game has restarted', rm.id );
+
+		rm.turn = rm.turn == 0 ? 1 : 0;
+
+		rm.clickedPost = -1;
+
+		rm.isHit = false;
+
+		rm.phase = 'prep';
+		
+		rm.isGameOn = true;
+
+		rm.counter = 0;
+	
+		rm.isWinner = '';
+
+		if ( rm.isTimed ) rm.startTimer( rm.prepTime );
+
+	}
 	rm.switchTurn = function () {
 
 		rm.turn = rm.turn == 0 ? 1 : 0;
-		
+
 		rm.resetTurn ();
 
 	}
-
 	rm.resetTurn = function () {
 		
-		if ( rm.isTimed ) {
-			rm.stopTimer();
-			rm.startTimer ( rm.blitzTime );
-		}
+		if ( rm.isTicking ) rm.stopTimer ();
+
+		rm.counter = 0;
+
+		if ( rm.isTimed ) rm.startTimer ( rm.blitzTime );
+
 	}
 	return rm;
 	
@@ -164,7 +209,7 @@ io.on('connection', function(socket){
 
 		playerList [ socket.id ] = newPlayer;
 
-		console.log ( '\n --> ' + newPlayer.username  + ' has entered the game.' );
+		//console.log ( '\n --> ' + newPlayer.username  + ' has entered the game.' );
 
 		sendPlayersOnline ();
 		
@@ -180,27 +225,29 @@ io.on('connection', function(socket){
 	
 	socket.on("enterGame", function (data) {
 	
-		//console.log ( data );
 
 		if ( data.isSinglePlayer ) {
 
-			var newRoom = GameRoom ( socket.id, data.isTimed );
+			var rmName = socket.id + '_' + Date.now();	
+
+			var newRoom = GameRoom ( rmName, data.isTimed );
 				
 			newRoom.playerIDs.push ( socket.id )
 
 			newRoom.isClosed = true;
 
-			roomList [ socket.id ] = newRoom;
+			roomList [ rmName ] = newRoom;
 
 			var player = playerList [ socket.id ];
 
-			player.roomid = socket.id;
+			player.roomid = rmName;
 
-			console.log ('\n --> [SP] Room Created :',  newRoom.id );
+			//console.log ('\n --> [SP] Room Created :',  rmName );
 
 			var returnData = {
 			
 				'isSinglePlayer' : true,
+				'isTimed' : data.isTimed,
 				'players' : {
 					'self' : player.username,
 				}
@@ -212,25 +259,27 @@ io.on('connection', function(socket){
 
 		}else {
 	
-			var availableRoom = getAvailableRoom();
+			var availableRoom = getAvailableRoom( data.isTimed );
 
-			console.log ('\n --> avail room',  availableRoom );
+			//console.log ('\n --> avail room',  availableRoom );
 
 			if ( availableRoom == 'none' ) {
 
-				var newRoom = GameRoom ( socket.id, data.isTimed );
+				var rmName = socket.id + '_' + Date.now();
+
+				var newRoom = GameRoom ( rmName, data.isTimed );
 				
 				newRoom.playerIDs.push ( socket.id );
 
 				newRoom.playerCount += 1;
 
-				roomList [ socket.id ] = newRoom;
+				roomList [ rmName ] = newRoom;
 
 				var player = playerList [ socket.id ];
 
-				player.roomid = socket.id;
+				player.roomid = rmName;
 
-				console.log ( '\n --> Room Created :', newRoom.id );
+				//console.log ( '\n --> Room Created :', rmName );
 
 			}else  {
 				
@@ -247,7 +296,7 @@ io.on('connection', function(socket){
 				gameRoom.initGame ();
 
 				//initialize game..
-				initGame ( gameRoom.playerIDs );
+				initGame ( gameRoom.id );
 		
 			}
 
@@ -262,7 +311,7 @@ io.on('connection', function(socket){
 		
 		initGridData ( socket.id, data );
 
-		//console.log ( '\n ...  data sent by ' + player.username );
+		////console.log ( '\n ...  data sent by ' + player.username );
 		
 		var checker = checkPlayersAreReady ( player.roomid );
 
@@ -282,13 +331,13 @@ io.on('connection', function(socket){
 	
 		if ( verifyClickSent(socket.id ) ) {
 
-			console.log ('\n --> Click received from ' + playerList[socket.id].username + ':', data );
+			//console.log ('\n --> Click received from ' + playerList[socket.id].username + ':', data );
 
 			analyzeGridClicked ( data, socket.id );
 
 		}else {
 
-			console.log ('\n --> Click received is invalid');
+			//console.log ('\n --> Click received is invalid');
 
 		}
 		
@@ -312,7 +361,7 @@ io.on('connection', function(socket){
 		
 		var plyr = playerList[socket.id];
 		
-		console.log ( '\n <-- ' + plyr.username +' has left the game', plyr.roomid == '' ? 'singlePlayer' : plyr.roomid );
+		//console.log ( '\n <-- ' + plyr.username +' has left the game', plyr.roomid == '' ? 'singlePlayer' : plyr.roomid );
 
 		leaveRoom ( socket.id, plyr.roomid );
 
@@ -324,7 +373,7 @@ io.on('connection', function(socket){
 			
 			var plyr = playerList[socket.id];
 
-			console.log ( '\n <-- ' + plyr.username  + ' has been disconnected.' );
+			//console.log ( '\n <-- ' + plyr.username  + ' has been disconnected.' );
 
 			if ( plyr.roomid != '' ) leaveRoom ( socket.id, plyr.roomid );
 			
@@ -339,15 +388,37 @@ io.on('connection', function(socket){
 		
 	});
 
-	
-
 });
 
+function timeRanOut ( roomid ) {
 
-function getAvailableRoom () {
+	var room = roomList[roomid];
+
+	//console.log ( '\n --> End Time :', playerList [ room.playerIDs [room.turn] ].username );
+
+	if ( !room.isGameOn ) {
+
+		for ( var i=0; i<room.playerCount; i++ ) {
+
+			var self = playerList [ room.playerIDs[i] ];
+			
+			var turn = room.turn == i ? 'self' : 'oppo';
+			
+			var winner = turn == 'self' ? 'oppo' : 'self';
+
+			var tmpSocket = socketList [ self.id ];
+	
+			tmpSocket.emit ('timeRanOut', { 'winner' : winner });
+		}
+
+	}
+}
+
+
+function getAvailableRoom ( isTimed ) {
 
 	for ( var i in roomList ) {
-		if ( !roomList[i].isClosed ) return roomList[i].id;
+		if ( !roomList[i].isClosed && roomList[i].isTimed == isTimed ) return roomList[i].id;
 	}
 	return 'none';
 
@@ -362,19 +433,21 @@ function verifyClickSent ( socketid ) {
 
 	return true;
 }
-function initGame ( playerIDs ) {
+function initGame ( roomid ) {
 
-	for ( var i = 0; i < playerIDs.length; i++ ) {
+	var rm = roomList [roomid ];
 
-		var counter = i == 0 ? 1 : 0;
+	for ( var i = 0; i < rm.playerCount; i++ ) {
 
-		var self = playerList [ playerIDs[i] ];
 
-		var oppo =  playerList [playerIDs[counter]];
+		var self = playerList [ rm.playerIDs[i] ];
+
+		var oppo =  playerList [ rm.playerIDs[ i == 0 ? 1 : 0 ]];
 
 		var data = {
 			
 			'isSinglePlayer' : false,
+			'isTimed' : rm.isTimed,
 			'players' : {
 				'self' : self.username,
 				'oppo' : oppo.username
@@ -382,7 +455,7 @@ function initGame ( playerIDs ) {
 
 		};
 
-		var socket = socketList [ playerIDs[i] ];
+		var socket = socketList [ self.id ];
 
 		socket.emit ('initGame', data );
 
@@ -452,7 +525,7 @@ function sendPlayersOnline () {
 }
 function startGame ( roomID ) {
 
-	console.log ( '\n Game has started...', roomID );
+	//console.log ( '\n Game has started...', roomID );
 
 	var gameRoom = roomList[roomID];
 
@@ -470,7 +543,7 @@ function startGame ( roomID ) {
 } 
 function resetGame ( roomID ) {
 
-	console.log ( '\n Game has been restarted...', roomID );
+	//console.log ( '\n Game has been restarted...', roomID );
 
 	var gameRoom = roomList[roomID];
 
@@ -514,17 +587,17 @@ function leaveRoom ( playerid, roomid ) {
 			
 			socket.emit ('opponentLeft', {} );
 			
-			console.log ( '\n <-- Opponent Left :', roomid  );
+			//console.log ( '\n <-- Opponent Left :', roomid  );
 
 		} else {
 			//...
 			delete roomList [roomid];
 
-			console.log ( '\n <-- Room deleted :', roomid  );
+			//console.log ( '\n <-- Room deleted :', roomid  );
 
 		}
 
-		//console.log ('\n <-- ' + player.username + ' has left the game room.' );
+		////console.log ('\n <-- ' + player.username + ' has left the game room.' );
 
 	}
 	
@@ -652,6 +725,9 @@ function analyzeGridClicked ( post, playerid ) {
 
 		var selfGrid = [], oppoGrid = [];
 
+		var winner = i == room.turn ? 'self' : 'oppo';
+
+
 		for ( var j = 0; j < 100; j++ ) {
 			
 			selfGrid.push ( { 
@@ -683,6 +759,7 @@ function analyzeGridClicked ( post, playerid ) {
 			
 			'isHit' : isHit,
 			'isWinner' : isWinner,
+			'winner' : winner,
 			'post' : post,
 			'shipIndex' : shipIndex, 
 			'shipSunk' : shipSunk,
@@ -697,7 +774,7 @@ function analyzeGridClicked ( post, playerid ) {
 
 		}
 
-		//console.log ( ' --> Data sent to ', self.username );
+		////console.log ( ' --> Data sent to ', self.username );
 		
 		var socket = socketList [ self.id ];
 
