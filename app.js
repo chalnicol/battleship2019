@@ -17,7 +17,7 @@ app.use('/client', express.static(__dirname + '/client'));
 //serv.listen(2000);
 serv.listen(process.env.PORT || 2000);
 
-//console.log("Server started.");
+console.log("Server started.");
 
 var socketList = {};
 var playerList = {};
@@ -316,9 +316,11 @@ io.on('connection', function(socket){
 		var checker = checkPlayersAreReady ( player.roomid );
 
 		if ( checker ) {
-			
-			startGame ( player.roomid );
 
+			setTimeout ( function () {
+				startGame ( player.roomid );
+			}, 800 );
+			
 		}else {
 
 			sendPlayerReady ( player.roomid );
@@ -544,10 +546,7 @@ function startGame ( roomID ) {
 function resetGame ( roomID ) {
 
 	//console.log ( '\n Game has been restarted...', roomID );
-
 	var gameRoom = roomList[roomID];
-
-	gameRoom.resetGame();
 
 	for ( var i=0; i<gameRoom.playerCount; i++) {
 
@@ -559,6 +558,10 @@ function resetGame ( roomID ) {
 
 		socket.emit ('resetGame', null );
 	}
+
+	setTimeout ( function () {
+		gameRoom.resetGame();
+	}, 800 );
 
 } 
 function leaveRoom ( playerid, roomid ) {

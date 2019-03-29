@@ -104,7 +104,7 @@ window.onload = function () {
 
         socket = io();
 
-        socket.emit ('initUser', username.value );
+       
 
         /* 
         if ( pW < 375 ) {
@@ -147,6 +147,8 @@ window.onload = function () {
             ]);
             this.load.audio ('drumsofwar', [ 'client/assets/sfx/drumsofwar.ogg', 'client/assets/sfx/drumsofwar.mp3'] );
             this.load.audio ('siege', [ 'client/assets/sfx/siege.ogg', 'client/assets/sfx/siege.mp3'] );
+            this.load.audio ('tick', [ 'client/assets/sfx/tick.ogg', 'client/assets/sfx/tick.mp3'] );
+
             this.load.spritesheet('thumbs', 'client/assets/images/fleet.png', { frameWidth: 400, frameHeight: 80 });
 
             this.load.on('progress', function (value) {
@@ -168,6 +170,9 @@ window.onload = function () {
         },
         create: function ()
         {
+
+
+            socket.emit ('initUser', username.value );
 
             this.loadtxt.destroy();
 
@@ -730,14 +735,18 @@ window.onload = function () {
             });
             socket.on ('timeRanOut', function ( data ) {
                 
-
                 if ( _this.gameOn ) {
 
                     if ( _this.isTicking ) _this.stopTimer();
 
                     _this.plyrIndicator [ _this.turn ].forceZero ();
 
-                    _this.endGame( data.winner);
+                    _this.music.play('alarm');
+
+                    setTimeout ( function() {
+                        _this.endGame( data.winner);
+                    }, 300);
+                    
                 }
                 
               
@@ -748,6 +757,8 @@ window.onload = function () {
 
             this.music = this.sound.addAudioSprite('sfx').setVolume (0.8);
 
+            this.tick = this.sound.add('tick').setVolume(0.6);
+            
             this.bgmusic = this.sound.add('siege').setVolume(0.2).setLoop(true);
 
             this.bgmusic.play();
@@ -1279,7 +1290,7 @@ window.onload = function () {
                 _this.timerCount += 1;
 
                 //console.log ( max - _this.timerCount );
-
+                
                 if ( _this.gamePhase == 'prep' ) {
                     _this.plyrIndicator ['self'].tick ( max - _this.timerCount );
                 }else {
@@ -1291,6 +1302,8 @@ window.onload = function () {
 
                     _this.timerEnds ();
 
+                }else {
+                    _this.tick.play();
                 }
 
             }, 1000 );
@@ -1299,11 +1312,28 @@ window.onload = function () {
         timerEnds : function () {
 
             switch ( this.gamePhase ) {
+
                 case 'prep' :
+                    this.music.play ('warp')
                     this.readyFleet ();
                 break;
                 case 'proper' :
-                    this.endGame ( this.turn == 'self' ? 'oppo' : 'self' );
+
+                    if ( this.isSinglePlayer ) {
+
+                        this.music.play ('alarm')
+
+                        var opp = this.turn == 'self' ? 'oppo' : 'self';
+    
+                        var _this = this;
+                        setTimeout ( function () {
+                            _this.endGame ( opp  );
+                        }, 300 );
+                        
+                        console.log ('called');
+
+                    }
+
                 break;
                 default:
             }
@@ -2547,7 +2577,7 @@ window.onload = function () {
                 
                 if ( _this.isBlitz ) _this.startTimer ( _this.prepTime );
 
-            }, 500 );
+            }, 800 );
 
         },
         leaveGame :  function () {
